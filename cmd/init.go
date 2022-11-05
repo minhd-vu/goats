@@ -29,7 +29,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-var force bool
+var initFlags initCmdFlags
+
+type initCmdFlags struct {
+	force bool
+}
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -78,6 +82,14 @@ var initCmd = &cobra.Command{
 					Help: `The default editor to use when opening notes. This should be something that is callable from path.
 Examples: vi, vim, nvim, emacs, code`},
 			},
+			{
+				Name: "file_type",
+				Prompt: &survey.Input{
+					Message: "File Type:",
+					Default: cfg.FileType,
+					Help: `The default file type to use when creating new notes. This also specifies the file type of templates.
+Examples: md, txt, tex, rst`},
+			},
 		}
 
 		answers := make(map[string]interface{})
@@ -90,7 +102,7 @@ Examples: vi, vim, nvim, emacs, code`},
 		}
 
 		err := viper.SafeWriteConfig()
-		if force {
+		if initFlags.force {
 			err = viper.WriteConfig()
 		}
 
@@ -109,5 +121,5 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite config file if it exists")
+	initCmd.Flags().BoolVarP(&initFlags.force, "force", "f", false, "Overwrite config file if it exists")
 }

@@ -22,22 +22,75 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+var newFlags newCmdFlags
+
+type newCmdFlags struct {
+	template string
+	output   string
+	force    bool
+}
+
 // newCmd represents the new command
 var newCmd = &cobra.Command{
-	Use:   "new",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "new [filename] [-t template] [-o output]",
+	Short: "Create a new note",
+	Long:  `Create a new note with a given filename. If no filename is given, the filename will be the timestamp.`,
+	RunE: func(_ *cobra.Command, args []string) error {
+		if newFlags.output == "" {
+			newFlags.output = filepath.Join(cfg.RootPath, cfg.NotesDir)
+		}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("new called")
+		if err := os.MkdirAll(newFlags.output, os.ModePerm); err != nil {
+			return err
+		}
+
+		var filename string
+		if len(args) > 0 {
+			filename = args[0]
+		} else {
+			filename = time.Now().Format(time.RFC3339)
+		}
+
+		filename = fmt.Sprintf("%s.%s", filename, cfg.FileType)
+		path := filepath.Join(newFlags.output, filename)
+		file, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+
+		if newFlags.template != "" {
+			templateFilename := fmt.Sprintf("%s.%s", newFlags.template, cfg.FileType)
+			templateFilepath := filepath.Join(cfg.RootPath, cfg.TemplatesDir, templateFilename)
+			templateFile, err := os.Open(templateFilepath)
+			if err != nil {
+				return err
+			}
+
+			_, err = io.Copy(file, templateFile)
+			if err != nil {
+				return err
+			}
+		}
+
+		cmd := exec.Command(cfg.Editor, path)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		if err := cmd.Run(); err != nil {
+			log.Error(err)
+		}
+
+		return nil
 	},
 }
 
@@ -52,5 +105,7 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// newCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	newCmd.Flags().StringVarP(&newFlags.template, "template", "t", "", "The template to use")
+	newCmd.Flags().StringVarP(&newFlags.output, "output", "o", "", "Where the new note will be created")
+	newCmd.Flags().BoolVarP(&newFlags.force, "force", "f", false, "Overwrite note if already exists")
 }

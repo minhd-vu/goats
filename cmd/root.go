@@ -35,6 +35,7 @@ type config struct {
 	NotesDir     string `mapstructure:"notes_dir" survey:"notes_dir"`
 	TemplatesDir string `mapstructure:"templates_dir" survey:"templates_dir"`
 	Editor       string `mapstructure:"editor" survey:"editor"`
+	FileType     string `mapstructure:"file_type" survey:"file_type"`
 }
 
 var (
@@ -45,13 +46,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gotes",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Greatest note taking tool written in Go(tes)",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -104,6 +99,7 @@ func initConfig() {
 		NotesDir:     "notes",
 		TemplatesDir: "templates",
 		Editor:       "vi",
+		FileType:     "md",
 	}
 
 	// If a config file is found, read it in.
