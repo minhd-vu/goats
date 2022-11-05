@@ -35,7 +35,12 @@ var force bool
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize the gotes config",
-	Long:  ``,
+	Long: `Initializing the gotes config will create a file at ~/.gotes.yaml unless you set the --config flag. The config file consist of these variables:
+  - root_path: The root path to gotes. The notes_dir and templates_dir will be inside of this root path.
+  - notes_dir: The directory where note files will be stored.
+  - templates_dir: The directory where template files will be stored.
+  - editor: The default editor to use when opening notes. This should be something that is callable from path.
+            Examples: vi, vim, nvim, emacs, code`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		questions := []*survey.Question{
 			{
@@ -43,6 +48,7 @@ var initCmd = &cobra.Command{
 				Prompt: &survey.Input{
 					Message: "Root Path:",
 					Default: cfg.RootPath,
+					Help:    `The root path to gotes. The notes_dir and templates_dir will be inside of this root path.`,
 				},
 				Transform: survey.TransformString(filepath.Clean),
 			},
@@ -51,6 +57,7 @@ var initCmd = &cobra.Command{
 				Prompt: &survey.Input{
 					Message: "Notes Dir:",
 					Default: cfg.NotesDir,
+					Help:    `The directory where note files will be stored.`,
 				},
 				Transform: survey.TransformString(filepath.Clean),
 			},
@@ -59,6 +66,7 @@ var initCmd = &cobra.Command{
 				Prompt: &survey.Input{
 					Message: "Templates Dir:",
 					Default: cfg.TemplatesDir,
+					Help:    `The directory where template files will be stored.`,
 				},
 				Transform: survey.TransformString(filepath.Clean),
 			},
