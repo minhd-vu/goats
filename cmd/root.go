@@ -22,14 +22,25 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+type config struct {
+	RootPath     string `mapstructure:"root_path" survey:"root_path"`
+	NotesDir     string `mapstructure:"notes_dir" survey:"notes_dir"`
+	TemplatesDir string `mapstructure:"templates_dir" survey:"templates_dir"`
+	Editor       string `mapstructure:"editor" survey:"editor"`
+}
+
+var (
+	cfg     config
+	cfgFile string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -71,14 +82,14 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	// Find home directory.
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
 		// Search config in home directory with name ".gotes" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
@@ -87,8 +98,20 @@ func initConfig() {
 
 	viper.AutomaticEnv() // read in environment variables that match
 
+	// Set config defaults
+	cfg = config{
+		RootPath:     filepath.Join(home, "gotes"),
+		NotesDir:     "notes",
+		TemplatesDir: "templates",
+		Editor:       "vi",
+	}
+
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	if err = viper.ReadInConfig(); err == nil {
+		log.Info("Using config file: ", viper.ConfigFileUsed())
+	}
+
+	if err := viper.Unmarshal(&cfg); err != nil {
+		log.Error(err)
 	}
 }
